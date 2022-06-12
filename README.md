@@ -33,3 +33,24 @@ how many sentences have also plant names. Exact match using:
   - notice we didnt keep the spike results in the repo as they are too heavy (TODO: add a link to the query) 
 - spacy: `get_upper_bound_with_spacy.py`
 
+# Building a Chromosome Count Database (ccdb)
+
+## Name extraction and resolution
+
+- For each sentence with “2n=” or “2n =” we extracted the names of plants and numbers of the corresponding 2n and formed a mapping.
+- To resolve partial names (from the previous step) we:
+  - Heuristic A: extracted full names that appeared in the full context (the entire document) and contained the partial name
+  - Heuristic B: extracted full names that appeared in the full context (the entire document) and contained the partial name, where the full name did not appear as a sequence in the document but rather each of its individual tokens were found “somewhere” in the full document.
+  - This means that for partial names we could have a list of optional full names that resulted from Hursitic A and a list of names that resulted from Heuristic B (and a list of optional numbers just like full-names matches). We chose to continue only with those who had only up to one full name in the Heuristic A (or only one in heuristic B if none in heuristic A)
+
+
+Running the `name_resolution.py` should do that (TODO - validate)
+
+## Voting
+
+- To choose a single number per full name, we used the following heuristics:
+  - If after intersecting all the numbers appearing with a plant, only a single number remained - take that number
+  - otherwise, take the majority vote (over the counts of all CCs associated with the plant)
+    - in case of a tie dont take that plant
+
+Running the `voting.py` should do that (TODO - validate)
