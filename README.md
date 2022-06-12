@@ -15,4 +15,12 @@ python spike_s2orc/organize_one_big_jsonl_5.py --metafile data/metadata.jsonl --
 
 Papers which have either “2n=” or “2n =” in their title, abstract or content(body_text, ref_entries).
 
-`filter_docs.py`
+simply run `filter_docs.py` relatively to data/spike_s2orc.jsonl
+
+this results in 2 files filtered_docs.jsonl (original docs but after filtering) and filtered_segs.jsonl (flattened set of sentences containing `2n=` or `2n =`)
+
+##  indexing in Spike
+
+with entity ruler = each plant name is a pattern resulting in 1.25M patterns)
+
+note that the plants list is structured such that some plant names also have aliases, but for NER we just flattened everything.
