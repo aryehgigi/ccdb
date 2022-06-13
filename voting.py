@@ -3,11 +3,13 @@ import csv
 import math
 import re
 
+# read extracted full names
 f = open('/full_names.csv', encoding="ISO-8859-1")
 r = csv.DictReader(f.readlines())
 ls = [rr for rr in r]
 f.close()
 
+# create main dictionary holding a mapping from plant to its sentence-to-ccs-list mapping
 d = defaultdict(defaultdict)
 for l in ls:
     if (l['sentence'], l['s2_url']) in d[l['plant']]:
@@ -70,6 +72,7 @@ for k, v in d.items():
             final_csv2_unique.append({"plant": k, "CC": sure[k], "s2_url": det_l[0][1], "sentence": det_l[0][0]})
 
 
+# create inverse dictionaries
 plants_per_sent = defaultdict(list)
 ccs_per_sent = defaultdict(list)
 for k, v in d.items():
