@@ -1,3 +1,4 @@
+import os
 from collections import defaultdict
 import csv
 from tqdm import tqdm
@@ -126,6 +127,7 @@ def manipulate_doc(doc_details):
     return ret, csv_out
 
 
+# run multi-threaded and aggregate results
 final_csv = []
 final_ret = {"heuristic_a_1": defaultdict(list), "heuristic_a_n": defaultdict(list), "heuristic_b_1": defaultdict(list), "heuristic_b_n": defaultdict(list), "heuristic_b_0": defaultdict(list)}
 
@@ -139,6 +141,13 @@ with Pool(16) as p:
         final_csv.extend(c)
 
 
+# output results to full_names.csv
+if os.path.exists("full_names.csv"):
+    with open("full_names.csv") as f:
+        data = f.read()
+    with open("prev/full_names.csv", "w") as f:
+        f.write(data)
+
 fieldnames = ["plant", "CC", "s2_url", "sentence"]
 with open('full_names.csv', 'w', encoding='utf8', newline='') as f:
     writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -146,6 +155,7 @@ with open('full_names.csv', 'w', encoding='utf8', newline='') as f:
     writer.writerows(final_csv)
 
 
+# print and store examples and statistics
 print(f'heuristic_a_1: {len(final_ret["heuristic_a_1"])}, heuristic_a_n: {len(final_ret["heuristic_a_n"])}, heuristic_b_1: {len(final_ret["heuristic_b_1"])}, heuristic_b_n: {len(final_ret["heuristic_b_n"])}, heuristic_b_0: {len(final_ret["heuristic_b_0"])}')
 # heuristic_a_1: 3197, heuristic_a_n: 249, heuristic_b_1: 2203, heuristic_b_n: 1629, heuristic_b_0: 17645
 
@@ -160,6 +170,12 @@ print(f'heuristic_a_1 unique partial plants: {len(set([p[0] for p in final_ret["
 # heuristic_a_1 unique partial plants: 1341, heuristic_a_n unique partial plants: 169, heuristic_b_1 unique partial plants: 1224, heuristic_b_n unique partial plants: 803
 # , heuristic_b_0 unique partial plants: 3709
 
+if os.path.exists("full_names_heuristics_examples.json"):
+    with open("full_names_heuristics_examples.json") as f:
+        data = f.read()
+    with open("prev/full_names_heuristics_examples.json", "w") as f:
+        f.write(data)
+
 with open("full_names_heuristics_examples.json", "w") as f3:
     for k, v in final_ret.items():
         f3.write(f"\n\nExamples for {k}:\n")
@@ -169,17 +185,9 @@ with open("full_names_heuristics_examples.json", "w") as f3:
             except:
                 pass
 
-with open("full_names_heuristics.json", "w") as f2:
-    for k, v in final_ret.items():
-        for kk, vv in sorted([xx for xx in v.items()], key=lambda xxx: len(xxx[0][1])):
-            try:
-                f2.write(f'{kk}, {vv}' + "\n")
-            except:
-                pass
-
-# Reading the file and parsing it
+# Reading the statistics file and parsing it
 #
-# with open("full_names_heuristics.json", encoding="ISO-8859-1") as f:
+# with open("full_names_heuristics_examples.json", encoding="ISO-8859-1") as f:
 #     ls3 = f.readlines()
 #
 # partials_counts = defaultdict(list)
@@ -188,6 +196,8 @@ with open("full_names_heuristics.json", "w") as f2:
 # i = 0
 # for j, l in enumerate(ls3):
 #     asd = l.split(" [{'full_name_matches': ")
+#     if len(asd) < 2:
+#         continue
 #     partial = asd[0].split("', ")[0][2:]
 #     fns_pre_split = asd[1].split("'}, 'sent_text':")[0]
 #     if fns_pre_split[0] == '[':
