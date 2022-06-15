@@ -45,6 +45,8 @@ for k, v in d.items():
                 final_csv0.append({"plant": k, "CC": sure0[k], "s2_url": url, "sentence": sent})
             final_csv0_unique.append({"plant": k, "CC": sure0[k], "s2_url": det_l[(k, sure0[k])][0][1], "sentence": det_l[(k, sure0[k])][0][0]})
 
+
+# heuristic 3: take the majority vote (over the counts of all CCs associated with the plant)
 options = dict()
 sure = dict()
 uni = dict()
@@ -71,48 +73,47 @@ for k, v in d.items():
                 final_csv2.append({"plant": k, "CC": sure[k], "s2_url": url, "sentence": sent})
             final_csv2_unique.append({"plant": k, "CC": sure[k], "s2_url": det_l[0][1], "sentence": det_l[0][0]})
 
+# UNUSED
+#
+# # create inverse dictionaries
+# plants_per_sent = defaultdict(list)
+# ccs_per_sent = defaultdict(list)
+# for k, v in d.items():
+#     for kk, vv in v.items():
+#         plants_per_sent[kk].append(k)
+#         ccs_per_sent[kk] = vv
+#
+# options2 = defaultdict(list)
+# for (sent_ps, ps), (sent_ccs, ccs) in zip(plants_per_sent.items(), ccs_per_sent.items()):
+#     assert sent_ps == sent_ccs
+#     new_ccs = [cc for cc in ccs]
+#     new_ps = []
+#     for p in ps:
+#         if p in sure:
+#             if sure[p] in new_ccs:
+#                 new_ccs.remove(sure[p])
+#         else:
+#             new_ps.append(p)
+#     if len(new_ps) == len(new_ccs):
+#         for p, cc in zip(new_ps, new_ccs):
+#             minus = set(ccs).difference({cc})
+#             for op_cc, op_evidence in options[p]:
+#                 if op_cc not in minus:
+#                     options2[p].append((op_cc, op_evidence))
+#
+#
+# final_csv3_unique = []
+# final_csv3 = []
+# for p, v in options2.items():
+#     if p not in sure and p not in sure0 and p not in ks:
+#         if len(v) == 1:
+#             op_cc, op_evidence = v[0]
+#             for (sent, url) in op_evidence:
+#                 final_csv3.append({"plant": p, "CC": op_cc, "s2_url": url, "sentence": sent})
+#             final_csv3_unique.append({"plant": p, "CC": op_cc, "s2_url": op_evidence[0][1], "sentence": op_evidence[0][0]})
 
-# create inverse dictionaries
-plants_per_sent = defaultdict(list)
-ccs_per_sent = defaultdict(list)
-for k, v in d.items():
-    for kk, vv in v.items():
-        plants_per_sent[kk].append(k)
-        ccs_per_sent[kk] = vv
-
-options2 = defaultdict(list)
-for (sent_ps, ps), (sent_ccs, ccs) in zip(plants_per_sent.items(), ccs_per_sent.items()):
-    assert sent_ps == sent_ccs
-    new_ccs = [cc for cc in ccs]
-    new_ps = []
-    for p in ps:
-        if p in sure:
-            if sure[p] in new_ccs:
-                new_ccs.remove(sure[p])
-        else:
-            new_ps.append(p)
-    if len(new_ps) == len(new_ccs):
-        for p, cc in zip(new_ps, new_ccs):
-            minus = set(ccs).difference({cc})
-            for op_cc, op_evidence in options[p]:
-                if op_cc not in minus:
-                    options2[p].append((op_cc, op_evidence))
-
-
-final_csv3_unique = []
-final_csv3 = []
-for p, v in options2.items():
-    if p not in sure and p not in sure0 and p not in ks:
-        if len(v) == 1:
-            op_cc, op_evidence = v[0]
-            for (sent, url) in op_evidence:
-                final_csv3.append({"plant": p, "CC": op_cc, "s2_url": url, "sentence": sent})
-            final_csv3_unique.append({"plant": p, "CC": op_cc, "s2_url": op_evidence[0][1], "sentence": op_evidence[0][0]})
-
-
-
-
-
+# calculate the distance between the plant and the number in the sentence
+#   since we only have here the full name as it was shown, we need to do some algo to find it in the sent
 iii = 0
 
 
@@ -134,6 +135,7 @@ def distance(plant, cc, sent):
     return min(abs(d_2 - d_1) for d_2 in blob)
 
 
+# output
 final_csv = final_csv1 + final_csv0 + final_csv2
 final_csv = sorted(final_csv, key=lambda x: (x["plant"], distance(x["plant"], x["CC"], x["sentence"].lower())))
 
