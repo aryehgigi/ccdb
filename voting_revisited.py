@@ -1,7 +1,7 @@
 import csv
 
 # read extracted full names
-f = open('/full_names.csv', encoding="ISO-8859-1")
+f = open('full_names.csv', encoding="ISO-8859-1")
 r = csv.DictReader(f.readlines())
 ls = [rr for rr in r]
 f.close()
@@ -39,27 +39,32 @@ for l in ls:
 debug_csv = sorted(lines_with_priority, key=lambda l: (l["plant"], l["CC"], l["bucket"]))
 
 # for the final csv, we keep only the first bucket instances of the same plant-cc pair
+#   and remove duplicates on the fly
 sig = ""
 last_priority = -1
 final_csv = []
+l_set = set()
 for l in debug_csv:
     if sig != l['plant'] + str(l['CC']):
         sig = l['plant'] + str(l['CC'])
         last_priority = l["bucket"]
-        final_csv.append(l)
-        continue
     if l["bucket"] == last_priority:
-        final_csv.append(l)
+        if str(l) not in l_set:
+            final_csv.append(l)
+            l_set.add(str(l))
+
+# now resort for the final_csv by buckets
+final_csv = sorted(final_csv, key=lambda l: (l["plant"], l["bucket"], l["sentence"]))
 
 # outputs
 fieldnames = ["plant", "CC", "bucket", "s2_url", "sentence"]
 with open('full_names_buckets#1.csv', 'w', encoding='utf8', newline='') as f:
-    writer = csv.DictWriter(f, fieldnames=fieldnames)
+    writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction='ignore')
     writer.writeheader()
     writer.writerows(final_csv)
 
 fieldnames = ["plant", "CC", "bucket", "priority", "s2_url", "sentence"]
 with open('full_names_buckets_debug#1.csv', 'w', encoding='utf8', newline='') as f:
-    writer = csv.DictWriter(f, fieldnames=fieldnames)
+    writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction='ignore')
     writer.writeheader()
     writer.writerows(debug_csv)
