@@ -77,6 +77,19 @@ matcher2 = PhraseMatcher(nlp.vocab, attr="LOWER")
 matcher2.add("TerminologyList2", patterns2)
 
 
+def get_cc_span(sent, info):
+    cc_start = -1
+    cc_end = -1
+    for ind, w in enumerate(sent[:-1]):
+        if w.idx - sent[0].idx <= info.start() <= sent[ind + 1].idx - 1 - sent[0].idx:
+            cc_start = w.i - sent[0].i
+        elif w.idx - sent[0].idx <= info.end() <= sent[ind + 1].idx - 1 - sent[0].idx:
+            cc_end = w.i - sent[0].i
+            break
+
+    return cc_start, cc_end
+
+
 # worker function: per each sent in the given doc, check
 def manipulate_doc(doc_details):
     doc = doc_details["doc_url"]
@@ -90,16 +103,19 @@ def manipulate_doc(doc_details):
             matches = list(matcher(sent))
             for _, from_, to_ in matches:
                 plant = spacy_doc[from_:to_].text.lower()
+                plant_start = from_ - sent[0].i
+                plant_end = to_ - sent[0].i - 1
                 # check that no full name of the current alias name already appears in the sentence
                 #   because it will be matched in the full name matcher
                 if len([full_name for full_name in d[plant] if full_name in sent.text.lower()]) == 0:
                     full_name_matches = set([full_name for full_name in d[plant] if full_name in doc_lowered])
                     if len(full_name_matches) == 1:
                         ret["heuristic_a_1"][(plant, doc)].append({"full_name_matches": full_name_matches, "sent_text": sent.text})
-                        all_ccs = list(re.finditer("2n.*?=\s*([0-9]+)[^a-zA-Z+]", sent.text))
-                        for cc in all_ccs:
-                            dis = max(cc.start() - to_, from_ - cc.end())
-                            csv_out.append({"plant": list(full_name_matches)[0], "CC": cc.group(), "s2_url": doc, "sentence": sent.text, "priority": (1, len(matches), len(all_ccs), dis)})
+                        all_ccs = list(zip(list(re.finditer("2n.*?=\s*([0-9]+)[^a-zA-Z+]", sent.text)), re.findall("2n.*?=\s*([0-9]+)[^a-zA-Z+]", sent.text)))
+                        for (info, cc) in all_ccs:
+                            cc_start, cc_end = get_cc_span(sent, info)
+                            dis = 1000 if (plant_start - cc_end > 0) else cc_start - plant_end
+                            csv_out.append({"plant": list(full_name_matches)[0], "CC": cc, "s2_url": doc, "sentence": sent.text, "priority": (1, len(matches), len(all_ccs), dis)})
                     elif len(full_name_matches) > 1:
                         ret["heuristic_a_n"][(plant, doc)].append({"full_name_matches": full_name_matches, "sent_text": sent.text})
                     else:
@@ -107,10 +123,11 @@ def manipulate_doc(doc_details):
                                                   if all(word in doc_lowered.split() for word in full_name.split())])
                         if len(full_name_matches2) == 1:
                             ret["heuristic_b_1"][(plant, doc)].append({"full_name_matches": full_name_matches2, "sent_text": sent.text})
-                            all_ccs = list(re.finditer("2n.*?=\s*([0-9]+)[^a-zA-Z+]", sent.text))
-                            for cc in all_ccs:
-                                dis = max(cc.start() - to_, from_ - cc.end())
-                                csv_out.append({"plant": list(full_name_matches2)[0], "CC": cc.group(), "s2_url": doc, "sentence": sent.text, "priority": (2, len(matches), len(all_ccs), dis)})
+                            all_ccs = list(zip(list(re.finditer("2n.*?=\s*([0-9]+)[^a-zA-Z+]", sent.text)), re.findall("2n.*?=\s*([0-9]+)[^a-zA-Z+]", sent.text)))
+                            for (info, cc) in all_ccs:
+                                cc_start, cc_end = get_cc_span(sent, info)
+                                dis = 1000 if (plant_start - cc_end > 0) else cc_start - plant_end
+                                csv_out.append({"plant": list(full_name_matches2)[0], "CC": cc, "s2_url": doc, "sentence": sent.text, "priority": (2, len(matches), len(all_ccs), dis)})
                         elif len(full_name_matches2) > 1:
                             ret["heuristic_b_n"][(plant, doc)].append({"full_name_matches": full_name_matches2, "sent_text": sent.text})
                         else:
@@ -118,10 +135,13 @@ def manipulate_doc(doc_details):
             matches = list(matcher2(sent))
             for _, from_, to_ in matches:
                 plant = spacy_doc[from_:to_].text.lower()
-                all_ccs = list(re.finditer("2n.*?=\s*([0-9]+)[^a-zA-Z+]", sent.text))
-                for cc in all_ccs:
-                    dis = max(cc.start() - to_, from_ - cc.end())
-                    csv_out.append({"plant": plant, "CC": cc.group(), "s2_url": doc, "sentence": sent.text, "priority": (0, len(matches), len(all_ccs), dis)})
+                all_ccs = list(zip(list(re.finditer("2n.*?=\s*([0-9]+)[^a-zA-Z+]", sent.text)), re.findall("2n.*?=\s*([0-9]+)[^a-zA-Z+]", sent.text)))
+                plant_start = from_ - sent[0].i
+                plant_end = to_ - sent[0].i - 1
+                for (info, cc) in all_ccs:
+                    cc_start, cc_end = get_cc_span(sent, info)
+                    dis = 1000 if (plant_start - cc_end > 0) else cc_start - plant_end
+                    csv_out.append({"plant": plant, "CC": cc, "s2_url": doc, "sentence": sent.text, "priority": (0, len(matches), len(all_ccs), dis)})
     return ret, csv_out
 
 
