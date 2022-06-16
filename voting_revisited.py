@@ -31,7 +31,7 @@ for l in ls:
     elif (l['priority'][1] > 1) and (l['priority'][2] > 1):
         priority += 2
     # Bucketing Heuristic 2: when the distance between the plant and the number is too large, it lowers the chance that they belong to each other.
-    if l['priority'][3] > 5:
+    if l['priority'][3] > 8:
         priority += 1
     lines_with_priority.append(dict(l, **{"bucket": priority}))
 
