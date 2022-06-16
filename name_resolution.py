@@ -166,7 +166,7 @@ if os.path.exists("full_names.csv"):
     with open("prev/full_names.csv", "w") as f:
         f.write(data)
 
-fieldnames = ["plant", "CC", "s2_url", "sentence", "priory"]
+fieldnames = ["plant", "CC", "s2_url", "sentence", "priority"]
 with open('full_names.csv', 'w', encoding='utf8', newline='') as f:
     writer = csv.DictWriter(f, fieldnames=fieldnames)
     writer.writeheader()
