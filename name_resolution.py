@@ -7,9 +7,10 @@ import spacy
 from spacy.matcher import PhraseMatcher
 from multiprocessing import Pool
 import re
+import scispacy
 
 
-nlp = spacy.load("en_core_web_lg")
+nlp = spacy.load("en_core_sci_lg")
 
 
 # extracts all plant names
@@ -114,8 +115,8 @@ def manipulate_doc(doc_details):
                         all_ccs = list(zip(list(re.finditer("2n.*?=\s*([0-9]+)[^a-zA-Z+]", sent.text)), re.findall("2n.*?=\s*([0-9]+)[^a-zA-Z+]", sent.text)))
                         for (info, cc) in all_ccs:
                             cc_start, cc_end = get_cc_span(sent, info)
-                            dis = 1000 if (plant_start - cc_end > 0) else cc_start - plant_end
-                            csv_out.append({"plant": list(full_name_matches)[0], "CC": cc, "s2_url": doc, "sentence": sent.text, "priority": (1, len(matches), len(all_ccs), dis)})
+                            dis, reversed_order = (plant_start - cc_end, 1) if (plant_start - cc_end > 0) else (cc_start - plant_end, 0)
+                            csv_out.append({"plant": list(full_name_matches)[0], "CC": cc, "s2_url": doc, "sentence": sent.text, "priority": (1, len(matches), len(all_ccs), dis, reversed_order)})
                     elif len(full_name_matches) > 1:
                         ret["heuristic_a_n"][(plant, doc)].append({"full_name_matches": full_name_matches, "sent_text": sent.text})
                     else:
@@ -126,8 +127,8 @@ def manipulate_doc(doc_details):
                             all_ccs = list(zip(list(re.finditer("2n.*?=\s*([0-9]+)[^a-zA-Z+]", sent.text)), re.findall("2n.*?=\s*([0-9]+)[^a-zA-Z+]", sent.text)))
                             for (info, cc) in all_ccs:
                                 cc_start, cc_end = get_cc_span(sent, info)
-                                dis = 1000 if (plant_start - cc_end > 0) else cc_start - plant_end
-                                csv_out.append({"plant": list(full_name_matches2)[0], "CC": cc, "s2_url": doc, "sentence": sent.text, "priority": (2, len(matches), len(all_ccs), dis)})
+                                dis, reversed_order = (plant_start - cc_end, 1) if (plant_start - cc_end > 0) else (cc_start - plant_end, 0)
+                                csv_out.append({"plant": list(full_name_matches2)[0], "CC": cc, "s2_url": doc, "sentence": sent.text, "priority": (2, len(matches), len(all_ccs), dis, reversed_order)})
                         elif len(full_name_matches2) > 1:
                             ret["heuristic_b_n"][(plant, doc)].append({"full_name_matches": full_name_matches2, "sent_text": sent.text})
                         else:
@@ -140,8 +141,8 @@ def manipulate_doc(doc_details):
                 plant_end = to_ - sent[0].i - 1
                 for (info, cc) in all_ccs:
                     cc_start, cc_end = get_cc_span(sent, info)
-                    dis = 1000 if (plant_start - cc_end > 0) else cc_start - plant_end
-                    csv_out.append({"plant": plant, "CC": cc, "s2_url": doc, "sentence": sent.text, "priority": (0, len(matches), len(all_ccs), dis)})
+                    dis, reversed_order = (plant_start - cc_end, 1) if (plant_start - cc_end > 0) else (cc_start - plant_end, 0)
+                    csv_out.append({"plant": plant, "CC": cc, "s2_url": doc, "sentence": sent.text, "priority": (0, len(matches), len(all_ccs), dis, reversed_order)})
     return ret, csv_out
 
 
@@ -188,13 +189,13 @@ print(f'heuristic_a_1 unique partial plants: {len(set([p[0] for p in final_ret["
 # heuristic_a_1 unique partial plants: 1341, heuristic_a_n unique partial plants: 169, heuristic_b_1 unique partial plants: 1224, heuristic_b_n unique partial plants: 803
 # , heuristic_b_0 unique partial plants: 3709
 
-if os.path.exists("full_names_heuristics_examples.json"):
-    with open("full_names_heuristics_examples.json") as f:
+if os.path.exists("prev/full_names_heuristics_examples.json"):
+    with open("prev/full_names_heuristics_examples.json") as f:
         data = f.read()
     with open("prev/full_names_heuristics_examples.json", "w") as f:
         f.write(data)
 
-with open("full_names_heuristics_examples.json", "w") as f3:
+with open("prev/full_names_heuristics_examples.json", "w") as f3:
     for k, v in final_ret.items():
         f3.write(f"\n\nExamples for {k}:\n")
         for kk, vv in sorted([xx for xx in v.items()], key=lambda xxx: len(xxx[0][1]))[:25]:
