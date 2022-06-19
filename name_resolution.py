@@ -157,7 +157,7 @@ def manipulate_doc(doc_details):
 final_csv = []
 final_ret = {"heuristic_a_1": defaultdict(list), "heuristic_a_n": defaultdict(list), "heuristic_b_1": defaultdict(list), "heuristic_b_n": defaultdict(list), "heuristic_b_0": defaultdict(list)}
 
-with Pool(16) as p:
+with Pool(96) as p:
     for w, c in p.map(manipulate_doc, docs):
         final_ret["heuristic_a_1"].update(w["heuristic_a_1"])
         final_ret["heuristic_a_n"].update(w["heuristic_a_n"])
