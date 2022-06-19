@@ -167,6 +167,8 @@ with Pool(96) as p:
         final_csv.extend(c)
 
 
+print("finished jobs")
+
 # output results to full_names.csv
 if os.path.exists("full_names.csv"):
     with open("full_names.csv") as f:
@@ -196,13 +198,13 @@ print(f'heuristic_a_1 unique partial plants: {len(set([p[0] for p in final_ret["
 # heuristic_a_1 unique partial plants: 1341, heuristic_a_n unique partial plants: 169, heuristic_b_1 unique partial plants: 1224, heuristic_b_n unique partial plants: 803
 # , heuristic_b_0 unique partial plants: 3709
 
-if os.path.exists("prev/full_names_heuristics_examples.json"):
-    with open("prev/full_names_heuristics_examples.json") as f:
+if os.path.exists("full_names_heuristics_examples.json"):
+    with open("full_names_heuristics_examples.json") as f:
         data = f.read()
     with open("prev/full_names_heuristics_examples.json", "w") as f:
         f.write(data)
 
-with open("prev/full_names_heuristics_examples.json", "w") as f3:
+with open("full_names_heuristics_examples.json", "w") as f3:
     for k, v in final_ret.items():
         f3.write(f"\n\nExamples for {k}:\n")
         for kk, vv in sorted([xx for xx in v.items()], key=lambda xxx: len(xxx[0][1]))[:25]:
