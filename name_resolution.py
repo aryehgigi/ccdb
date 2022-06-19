@@ -96,7 +96,14 @@ def manipulate_doc(doc_details):
     doc = doc_details["doc_url"]
     doc_text = doc_details["doc_text"]
     ret = {"heuristic_a_1": defaultdict(list), "heuristic_a_n": defaultdict(list), "heuristic_b_1": defaultdict(list), "heuristic_b_n": defaultdict(list), "heuristic_b_0": defaultdict(list)}
-    spacy_doc = nlp(doc_text)
+    if len(doc_text) > 999999:
+        print(f"doc: {doc} too long: {len(doc_text)}")
+        return []
+    try:
+        spacy_doc = nlp(doc_text)
+    except:
+        print(f"doc: {doc} exception")
+        return []
     doc_lowered = doc_text.lower()
     csv_out = []
     for sent in spacy_doc.sents:
