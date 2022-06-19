@@ -140,7 +140,7 @@ final_csv = final_csv1 + final_csv0 + final_csv2
 final_csv = sorted(final_csv, key=lambda x: (x["plant"], distance(x["plant"], x["CC"], x["sentence"].lower())))
 
 fieldnames = ["plant", "CC", "s2_url", "sentence"]
-with open('full_names_acc_89.csv', 'w', encoding='utf8', newline='') as f:
+with open('prev/full_names_acc_89.csv', 'w', encoding='utf8', newline='') as f:
     writer = csv.DictWriter(f, fieldnames=fieldnames)
     writer.writeheader()
     writer.writerows(final_csv)
