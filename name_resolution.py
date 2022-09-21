@@ -91,6 +91,42 @@ def get_cc_span(sent, info):
     return cc_start, cc_end
 
 
+def stats_doc(doc_details):
+    doc = doc_details["doc_url"]
+    doc_text = doc_details["doc_text"]
+    if len(doc_text) > 999999:
+        print(f"doc: {doc} too long: {len(doc_text)}")
+        return []
+    try:
+        spacy_doc = nlp(doc_text)
+    except:
+        print(f"doc: {doc} exception")
+        return []
+    ret = dict()
+    for sent in spacy_doc.sents:
+        if ("2n=" in sent.text) or ("2n =" in sent.text):
+            matches = list(matcher(sent))
+            plants_count = len([from_ for _, from_, to_ in matches if len([full_name for full_name in d[spacy_doc[from_:to_].text.lower()] if full_name in sent.text.lower()]) == 0])
+            plants_count += len(list(matcher2(sent)))
+            cc_count = len(list(re.findall("2n.*?=\s*([0-9]+)[^a-zA-Z+]", sent.text)))
+            if plants_count > 1 and cc_count > 1:
+                ret[sent.text.lower()] = (plants_count, cc_count)
+    return ret
+
+
+final_stats = dict()
+print("starting jobs")
+with Pool(96) as p:
+    for stats in p.map(stats_doc, docs):
+        final_stats.update(stats)
+
+out = f"unique sents: {len(set(final_stats.keys()))}, plants count: {sum(p_c for p_c, _ in final_stats.values())}, ccs count: {sum(cc_c for _, cc_c in final_stats.values())}"
+print(out)
+print("finished jobs")
+with open("stats.txt", "w") as f:
+    f.write(out)
+
+
 # worker function: per each sent in the given doc, check
 def manipulate_doc(doc_details):
     doc = doc_details["doc_url"]
@@ -213,28 +249,3 @@ with open("full_names_heuristics_examples.json", "w") as f3:
                 f3.write(f'{kk}, {vv}' + "\n")
             except:
                 pass
-
-# Reading the statistics file and parsing it
-#
-# with open("full_names_heuristics_examples.json", encoding="ISO-8859-1") as f:
-#     ls3 = f.readlines()
-#
-# partials_counts = defaultdict(list)
-# full_name_counts = defaultdict(list)
-# which = {0: "heuristic_a_1", 1: "heuristic_a_n", 2: "heuristic_b_1", 3: "heuristic_b_n", 4: "heuristic_b_0"}
-# i = 0
-# for j, l in enumerate(ls3):
-#     asd = l.split(" [{'full_name_matches': ")
-#     if len(asd) < 2:
-#         continue
-#     partial = asd[0].split("', ")[0][2:]
-#     fns_pre_split = asd[1].split("'}, 'sent_text':")[0]
-#     if fns_pre_split[0] == '[':
-#         fns = []
-#     else:
-#         fns = fns_pre_split[2:].split("', '")
-#     if (len(fns) > 1 and i in [0, 2]) or (len(fns) == 1 and i == 1) or (len(fns) == 0 and i == 3):
-#         i += 1
-#     partials_counts[which[i]].append(partial)
-#     full_name_counts[which[i]].extend(fns)
-#
